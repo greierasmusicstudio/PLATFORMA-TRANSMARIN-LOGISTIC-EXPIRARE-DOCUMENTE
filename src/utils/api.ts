@@ -5,15 +5,13 @@
 export const WEBHOOK_URL = 'https://asistentulmeu.space/webhook/save';
 
 export interface DocumentData {
-  carInfo: string;
-  docType: string;
-  expiryDate: string;
-  alertEmail: string;
-  alerts: {
-    days30: boolean;
-    days7: boolean;
-    days1: boolean;
-  };
+  car_info: string;
+  doc_type: string;
+  expiry_date: string;
+  alert_email: string;
+  alert_30_days: boolean;
+  alert_7_days: boolean;
+  alert_1_day: boolean;
 }
 
 /**

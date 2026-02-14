@@ -6,15 +6,13 @@ import { saveDocument } from '@/utils/api';
 
 export default function DocumentForm() {
     const [formData, setFormData] = useState({
-        carInfo: '',
-        docType: 'ITP',
-        expiryDate: '',
-        alertEmail: '',
-        alerts: {
-            days30: true,
-            days7: true,
-            days1: true,
-        },
+        car_info: '',
+        doc_type: 'ITP',
+        expiry_date: '',
+        alert_email: '',
+        alert_30_days: true,
+        alert_7_days: true,
+        alert_1_day: true,
     });
 
     const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
@@ -28,7 +26,7 @@ export default function DocumentForm() {
         const { name, checked } = e.target;
         setFormData(prev => ({
             ...prev,
-            alerts: { ...prev.alerts, [name]: checked },
+            [name]: checked,
         }));
     };
 
@@ -41,11 +39,13 @@ export default function DocumentForm() {
             setStatus('success');
             // Reset form after success
             setFormData({
-                carInfo: '',
-                docType: 'ITP',
-                expiryDate: '',
-                alertEmail: '',
-                alerts: { days30: true, days7: true, days1: true },
+                car_info: '',
+                doc_type: 'ITP',
+                expiry_date: '',
+                alert_email: '',
+                alert_30_days: true,
+                alert_7_days: true,
+                alert_1_day: true,
             });
             setTimeout(() => setStatus('idle'), 3000);
         } catch (error) {
@@ -69,9 +69,9 @@ export default function DocumentForm() {
                     </label>
                     <input
                         type="text"
-                        name="carInfo"
+                        name="car_info"
                         required
-                        value={formData.carInfo}
+                        value={formData.car_info}
                         onChange={handleChange}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                         placeholder="ex: B 123 ABC / Ion Popescu"
@@ -84,8 +84,8 @@ export default function DocumentForm() {
                         Tip Document
                     </label>
                     <select
-                        name="docType"
-                        value={formData.docType}
+                        name="doc_type"
+                        value={formData.doc_type}
                         onChange={handleChange}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     >
@@ -104,9 +104,9 @@ export default function DocumentForm() {
                     </label>
                     <input
                         type="date"
-                        name="expiryDate"
+                        name="expiry_date"
                         required
-                        value={formData.expiryDate}
+                        value={formData.expiry_date}
                         onChange={handleChange}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
@@ -119,9 +119,9 @@ export default function DocumentForm() {
                     </label>
                     <input
                         type="email"
-                        name="alertEmail"
+                        name="alert_email"
                         required
-                        value={formData.alertEmail}
+                        value={formData.alert_email}
                         onChange={handleChange}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                         placeholder="email@exemplu.com"
@@ -137,8 +137,8 @@ export default function DocumentForm() {
                         <label className="flex items-center space-x-2">
                             <input
                                 type="checkbox"
-                                name="days30"
-                                checked={formData.alerts.days30}
+                                name="alert_30_days"
+                                checked={formData.alert_30_days}
                                 onChange={handleCheckboxChange}
                                 className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
                             />
@@ -147,8 +147,8 @@ export default function DocumentForm() {
                         <label className="flex items-center space-x-2">
                             <input
                                 type="checkbox"
-                                name="days7"
-                                checked={formData.alerts.days7}
+                                name="alert_7_days"
+                                checked={formData.alert_7_days}
                                 onChange={handleCheckboxChange}
                                 className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
                             />
@@ -157,8 +157,8 @@ export default function DocumentForm() {
                         <label className="flex items-center space-x-2">
                             <input
                                 type="checkbox"
-                                name="days1"
-                                checked={formData.alerts.days1}
+                                name="alert_1_day"
+                                checked={formData.alert_1_day}
                                 onChange={handleCheckboxChange}
                                 className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
                             />
@@ -172,8 +172,8 @@ export default function DocumentForm() {
                     type="submit"
                     disabled={status === 'loading'}
                     className={`w-full py-2 px-4 rounded-md text-white font-medium transition-colors ${status === 'loading'
-                            ? 'bg-gray-400 cursor-not-allowed'
-                            : 'bg-blue-600 hover:bg-blue-700'
+                        ? 'bg-gray-400 cursor-not-allowed'
+                        : 'bg-blue-600 hover:bg-blue-700'
                         }`}
                 >
                     {status === 'loading' ? 'Se salvează...' : 'Salvează Document'}
