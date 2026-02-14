@@ -174,12 +174,12 @@ export default function DashboardTable() {
                                         ) : format(parseISO(item.expiry_date), 'dd.MM.yyyy')}
                                     </td>
                                     <td className="px-6 py-4">
-                                        <span className={clsx(
-                                            'px-2.5 py-0.5 rounded-full text-xs font-semibold border',
+                                        <div className={clsx(
+                                            'inline-flex items-center px-3 py-1 rounded-full text-xs font-bold border shadow-sm whitespace-nowrap',
                                             getStatusColor(item.expiry_date)
                                         )}>
                                             {getStatusText(item.expiry_date)}
-                                        </span>
+                                        </div>
                                     </td>
                                     <td className="px-6 py-4">
                                         <div className="flex items-center gap-2">
