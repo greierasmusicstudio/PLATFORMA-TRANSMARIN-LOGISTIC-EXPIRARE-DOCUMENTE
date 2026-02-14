@@ -7,6 +7,7 @@ export default function DocumentForm() {
     const [formData, setFormData] = useState({
         car_info: '',
         doc_type: 'ITP',
+        custom_doc_type: '',
         expiry_date: '',
         alert_email: '',
         alert_30_days: true,
@@ -33,11 +34,24 @@ export default function DocumentForm() {
         e.preventDefault();
         setStatus('loading');
 
+        // Dacă e 'Altul', folosim valoarea din custom_doc_type
+        const submissionData = {
+            ...formData,
+            doc_type: formData.doc_type === 'Altul' ? formData.custom_doc_type : formData.doc_type
+        };
+
+        // Mică validare: dacă e 'Altul', să nu fie gol
+        if (formData.doc_type === 'Altul' && !formData.custom_doc_type.trim()) {
+            alert('Vă rugăm specificați tipul documentului.');
+            setStatus('idle');
+            return;
+        }
+
         try {
             const res = await fetch('/api/documents', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(formData)
+                body: JSON.stringify(submissionData)
             });
 
             if (!res.ok) {
@@ -50,6 +64,7 @@ export default function DocumentForm() {
             setFormData({
                 car_info: '',
                 doc_type: 'ITP',
+                custom_doc_type: '',
                 expiry_date: '',
                 alert_email: '',
                 alert_30_days: true,
@@ -58,8 +73,6 @@ export default function DocumentForm() {
             });
             setTimeout(() => {
                 setStatus('idle');
-                // Optional: trigger a refresh of the dashboard list if needed
-                // For now, allow auto-refresh or manual refresh
                 window.location.reload();
             }, 1000);
         } catch (error) {
@@ -92,7 +105,7 @@ export default function DocumentForm() {
                     />
                 </div>
 
-                {/* Document Type */}
+                {/* Document Type - UPDATED LOGIC */}
                 <div>
                     <label className="block text-sm font-bold text-gray-800 mb-1">
                         Tip Document
@@ -107,8 +120,26 @@ export default function DocumentForm() {
                         <option value="RCA">RCA</option>
                         <option value="Rovinieta">Rovinietă</option>
                         <option value="Casco">Casco</option>
-                        <option value="Altul">Altul</option>
+                        <option value="Altul">Altul (Specifică manual)</option>
                     </select>
+
+                    {/* Conditional Input for 'Altul' */}
+                    {formData.doc_type === 'Altul' && (
+                        <div className="mt-2 animate-in fade-in slide-in-from-top-1 duration-200">
+                            <label className="block text-xs font-bold text-blue-600 mb-1 uppercase tracking-wide">
+                                Specifică Tipul Documentului:
+                            </label>
+                            <input
+                                type="text"
+                                name="custom_doc_type"
+                                required={formData.doc_type === 'Altul'}
+                                value={formData.custom_doc_type}
+                                onChange={handleChange}
+                                className="w-full px-3 py-2 border border-blue-300 bg-blue-50 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 font-bold placeholder-blue-300"
+                                placeholder="ex: Licență Transport, Copie Conforme..."
+                            />
+                        </div>
+                    )}
                 </div>
 
                 {/* Expiration Date */}
