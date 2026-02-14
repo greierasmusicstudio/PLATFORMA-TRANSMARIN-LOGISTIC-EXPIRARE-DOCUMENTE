@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import { Save, AlertCircle } from 'lucide-react';
-import { saveDocument } from '@/utils/api';
 
 export default function DocumentForm() {
     const [formData, setFormData] = useState({
@@ -35,7 +34,17 @@ export default function DocumentForm() {
         setStatus('loading');
 
         try {
-            await saveDocument(formData);
+            const res = await fetch('/api/documents', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(formData)
+            });
+
+            if (!res.ok) {
+                const errorData = await res.json();
+                throw new Error(errorData.error || 'Server error');
+            }
+
             setStatus('success');
             // Reset form after success
             setFormData({
@@ -47,7 +56,12 @@ export default function DocumentForm() {
                 alert_7_days: true,
                 alert_1_day: true,
             });
-            setTimeout(() => setStatus('idle'), 3000);
+            setTimeout(() => {
+                setStatus('idle');
+                // Optional: trigger a refresh of the dashboard list if needed
+                // For now, allow auto-refresh or manual refresh
+                window.location.reload();
+            }, 1000);
         } catch (error) {
             console.error(error);
             setStatus('error');
@@ -64,7 +78,7 @@ export default function DocumentForm() {
             <form onSubmit={handleSubmit} className="space-y-4">
                 {/* Car Info */}
                 <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-bold text-gray-800 mb-1">
                         Număr Auto / Nume Șofer
                     </label>
                     <input
@@ -73,21 +87,21 @@ export default function DocumentForm() {
                         required
                         value={formData.car_info}
                         onChange={handleChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 font-semibold placeholder-gray-500"
                         placeholder="ex: B 123 ABC / Ion Popescu"
                     />
                 </div>
 
                 {/* Document Type */}
                 <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-bold text-gray-800 mb-1">
                         Tip Document
                     </label>
                     <select
                         name="doc_type"
                         value={formData.doc_type}
                         onChange={handleChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 font-semibold"
                     >
                         <option value="ITP">ITP</option>
                         <option value="RCA">RCA</option>
@@ -99,7 +113,7 @@ export default function DocumentForm() {
 
                 {/* Expiration Date */}
                 <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-bold text-gray-800 mb-1">
                         Data Expirării
                     </label>
                     <input
@@ -108,13 +122,13 @@ export default function DocumentForm() {
                         required
                         value={formData.expiry_date}
                         onChange={handleChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 font-semibold"
                     />
                 </div>
 
                 {/* Alert Email */}
                 <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-bold text-gray-800 mb-1">
                         Email Alertă
                     </label>
                     <input
@@ -123,46 +137,46 @@ export default function DocumentForm() {
                         required
                         value={formData.alert_email}
                         onChange={handleChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 font-semibold placeholder-gray-500"
                         placeholder="email@exemplu.com"
                     />
                 </div>
 
                 {/* Alert Logic */}
                 <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-bold text-gray-800 mb-2">
                         Configurează Alerte
                     </label>
                     <div className="flex gap-4">
-                        <label className="flex items-center space-x-2">
+                        <label className="flex items-center space-x-2 cursor-pointer select-none">
                             <input
                                 type="checkbox"
                                 name="alert_30_days"
                                 checked={formData.alert_30_days}
                                 onChange={handleCheckboxChange}
-                                className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+                                className="w-5 h-5 text-blue-600 rounded focus:ring-blue-500 cursor-pointer"
                             />
-                            <span className="text-sm text-gray-700">30 Zile</span>
+                            <span className="text-sm font-medium text-gray-900">30 Zile</span>
                         </label>
-                        <label className="flex items-center space-x-2">
+                        <label className="flex items-center space-x-2 cursor-pointer select-none">
                             <input
                                 type="checkbox"
                                 name="alert_7_days"
                                 checked={formData.alert_7_days}
                                 onChange={handleCheckboxChange}
-                                className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+                                className="w-5 h-5 text-blue-600 rounded focus:ring-blue-500 cursor-pointer"
                             />
-                            <span className="text-sm text-gray-700">7 Zile</span>
+                            <span className="text-sm font-medium text-gray-900">7 Zile</span>
                         </label>
-                        <label className="flex items-center space-x-2">
+                        <label className="flex items-center space-x-2 cursor-pointer select-none">
                             <input
                                 type="checkbox"
                                 name="alert_1_day"
                                 checked={formData.alert_1_day}
                                 onChange={handleCheckboxChange}
-                                className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+                                className="w-5 h-5 text-blue-600 rounded focus:ring-blue-500 cursor-pointer"
                             />
-                            <span className="text-sm text-gray-700">1 Zi</span>
+                            <span className="text-sm font-medium text-gray-900">1 Zi</span>
                         </label>
                     </div>
                 </div>
@@ -171,25 +185,25 @@ export default function DocumentForm() {
                 <button
                     type="submit"
                     disabled={status === 'loading'}
-                    className={`w-full py-2 px-4 rounded-md text-white font-medium transition-colors ${status === 'loading'
+                    className={`w-full py-3 px-4 rounded-md text-white font-bold text-lg shadow-md transition-all transform active:scale-95 ${status === 'loading'
                         ? 'bg-gray-400 cursor-not-allowed'
-                        : 'bg-blue-600 hover:bg-blue-700'
+                        : 'bg-blue-600 hover:bg-blue-700 hover:shadow-lg'
                         }`}
                 >
-                    {status === 'loading' ? 'Se salvează...' : 'Salvează Document'}
+                    {status === 'loading' ? 'Se salvează în Cloud...' : 'Salvează Document'}
                 </button>
 
                 {/* Feedback Message */}
                 {status === 'success' && (
-                    <div className="mt-3 p-2 bg-green-100 text-green-700 rounded-md flex items-center gap-2 text-sm">
-                        <AlertCircle className="w-4 h-4" />
-                        Document salvat cu succes!
+                    <div className="mt-3 p-3 bg-green-100 text-green-800 border border-green-200 rounded-md flex items-center gap-2 text-sm font-semibold animate-pulse">
+                        <AlertCircle className="w-5 h-5" />
+                        Document salvat cu succes! (Se reîncarcă...)
                     </div>
                 )}
                 {status === 'error' && (
-                    <div className="mt-3 p-2 bg-red-100 text-red-700 rounded-md flex items-center gap-2 text-sm">
-                        <AlertCircle className="w-4 h-4" />
-                        Eroare la salvare. Verifică conexiunea sau detaliile.
+                    <div className="mt-3 p-3 bg-red-100 text-red-800 border border-red-200 rounded-md flex items-center gap-2 text-sm font-semibold">
+                        <AlertCircle className="w-5 h-5" />
+                        Eroare la salvare. Încearcă din nou!
                     </div>
                 )}
             </form>
