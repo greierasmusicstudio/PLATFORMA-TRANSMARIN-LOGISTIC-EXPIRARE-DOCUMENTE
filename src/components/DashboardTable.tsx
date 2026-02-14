@@ -1,17 +1,49 @@
 "use client";
 
+import { useEffect, useState } from 'react';
 import { differenceInDays, parseISO, format } from 'date-fns';
 import { clsx } from 'clsx';
+import { supabase } from '@/utils/supabase';
 
-// Mock Data
-const MOCK_DATA = [
-    { id: 1, carInfo: 'B 101 XYZ', docType: 'RCA', expiryDate: '2026-03-01', alertEmail: 'admin@transmarin.ro' },
-    { id: 2, carInfo: 'B 202 AB', docType: 'ITP', expiryDate: '2026-02-15', alertEmail: 'sofer2@transmarin.ro' }, // Should be yellow/red soon
-    { id: 3, carInfo: 'B 303 CD', docType: 'Rovinieta', expiryDate: '2026-05-20', alertEmail: 'contact@transmarin.ro' },
-    { id: 4, carInfo: 'Ion Popescu', docType: 'Permis', expiryDate: '2025-01-01', alertEmail: 'ion@gmail.com' }, // Expired (Red)
-];
+interface Document {
+    id: number;
+    car_info: string;
+    doc_type: string;
+    expiry_date: string;
+    alert_email: string;
+    alert_30_days: boolean;
+    alert_7_days: boolean;
+    alert_1_day: boolean;
+    created_at: string;
+}
 
 export default function DashboardTable() {
+    const [documents, setDocuments] = useState<Document[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    const fetchDocuments = async () => {
+        setLoading(true);
+        const { data, error } = await supabase
+            .from('documents')
+            .select('*')
+            .order('expiry_date', { ascending: true });
+
+        if (error) {
+            console.error('Eroare la încărcarea documentelor:', error);
+        } else {
+            setDocuments(data || []);
+        }
+        setLoading(false);
+    };
+
+    useEffect(() => {
+        fetchDocuments();
+
+        // Auto-refresh la fiecare 30 secunde
+        const interval = setInterval(fetchDocuments, 30000);
+        return () => clearInterval(interval);
+    }, []);
+
     const getStatusColor = (expiryDate: string) => {
         const today = new Date();
         const expiry = parseISO(expiryDate);
@@ -46,24 +78,47 @@ export default function DashboardTable() {
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100">
-                        {MOCK_DATA.map((item) => (
-                            <tr key={item.id} className="hover:bg-gray-50 transition-colors">
-                                <td className="px-6 py-4 font-medium text-gray-900">{item.carInfo}</td>
-                                <td className="px-6 py-4">{item.docType}</td>
-                                <td className="px-6 py-4">{format(parseISO(item.expiryDate), 'dd.MM.yyyy')}</td>
-                                <td className="px-6 py-4">
-                                    <span className={clsx(
-                                        'px-2.5 py-0.5 rounded-full text-xs font-semibold border',
-                                        getStatusColor(item.expiryDate)
-                                    )}>
-                                        {getStatusText(item.expiryDate)}
-                                    </span>
+                        {loading ? (
+                            <tr>
+                                <td colSpan={5} className="px-6 py-8 text-center text-gray-400">
+                                    Se încarcă documentele...
                                 </td>
-                                <td className="px-6 py-4">{item.alertEmail}</td>
                             </tr>
-                        ))}
+                        ) : documents.length === 0 ? (
+                            <tr>
+                                <td colSpan={5} className="px-6 py-8 text-center text-gray-400">
+                                    Nu există documente. Adaugă primul document din formularul din stânga.
+                                </td>
+                            </tr>
+                        ) : (
+                            documents.map((item) => (
+                                <tr key={item.id} className="hover:bg-gray-50 transition-colors">
+                                    <td className="px-6 py-4 font-medium text-gray-900">{item.car_info}</td>
+                                    <td className="px-6 py-4">{item.doc_type}</td>
+                                    <td className="px-6 py-4">{format(parseISO(item.expiry_date), 'dd.MM.yyyy')}</td>
+                                    <td className="px-6 py-4">
+                                        <span className={clsx(
+                                            'px-2.5 py-0.5 rounded-full text-xs font-semibold border',
+                                            getStatusColor(item.expiry_date)
+                                        )}>
+                                            {getStatusText(item.expiry_date)}
+                                        </span>
+                                    </td>
+                                    <td className="px-6 py-4">{item.alert_email}</td>
+                                </tr>
+                            ))
+                        )}
                     </tbody>
                 </table>
+            </div>
+            {/* Buton Refresh manual */}
+            <div className="p-3 bg-gray-50 border-t border-gray-200 flex justify-end">
+                <button
+                    onClick={fetchDocuments}
+                    className="text-sm text-blue-600 hover:text-blue-800 font-medium transition-colors"
+                >
+                    🔄 Reîncarcă datele
+                </button>
             </div>
         </div>
     );
