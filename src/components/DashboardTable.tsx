@@ -23,18 +23,25 @@ export default function DashboardTable() {
     const [loading, setLoading] = useState(true);
     const [editingId, setEditingId] = useState<number | null>(null);
     const [editForm, setEditForm] = useState<Partial<Document>>({});
+    const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
     const fetchDocuments = async () => {
         setLoading(true);
-        const { data, error } = await supabase
-            .from('documents')
-            .select('*')
-            .order('expiry_date', { ascending: true });
+        setErrorMsg(null);
+        try {
+            const { data, error } = await supabase
+                .from('documents')
+                .select('*')
+                .order('expiry_date', { ascending: true });
 
-        if (error) {
-            console.error('Eroare la încărcarea documentelor:', error);
-        } else {
-            setDocuments(data || []);
+            if (error) {
+                console.error('Eroare la încărcarea documentelor:', error);
+                setErrorMsg(`Eroare Supabase: ${error.message} (Cod: ${error.code})`);
+            } else {
+                setDocuments(data || []);
+            }
+        } catch (err: any) {
+            setErrorMsg(`Eroare de conexiune: ${err.message || 'Necunoscută'}`);
         }
         setLoading(false);
     };
@@ -96,6 +103,12 @@ export default function DashboardTable() {
 
     return (
         <div className="bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden">
+            {errorMsg && (
+                <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-4" role="alert">
+                    <p className="font-bold">Eroare!</p>
+                    <p>{errorMsg}</p>
+                </div>
+            )}
             <div className="p-4 bg-gray-50 border-b border-gray-200 flex justify-between items-center">
                 <h3 className="font-bold text-gray-700">Flotă Monitorizată</h3>
                 <button
