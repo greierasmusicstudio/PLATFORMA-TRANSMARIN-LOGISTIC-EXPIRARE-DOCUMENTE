@@ -36,12 +36,14 @@ export default function DashboardTable() {
 
             if (error) {
                 console.error('Eroare la încărcarea documentelor:', error);
-                setErrorMsg(`Eroare Supabase: ${error.message} (Cod: ${error.code})`);
+                const url = process.env.NEXT_PUBLIC_SUPABASE_URL || 'MISSING';
+                setErrorMsg(`Eroare Supabase: ${error.message} (Cod: ${error.code}). URL Check: ${url.substring(0, 15)}...`);
             } else {
                 setDocuments(data || []);
             }
         } catch (err: any) {
-            setErrorMsg(`Eroare de conexiune: ${err.message || 'Necunoscută'}`);
+            const url = process.env.NEXT_PUBLIC_SUPABASE_URL || 'MISSING';
+            setErrorMsg(`Eroare de conexiune: ${err.message || 'Necunoscută'}. URL Check: ${url.substring(0, 15)}...`);
         }
         setLoading(false);
     };
