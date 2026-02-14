@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { differenceInDays, parseISO, format } from 'date-fns';
 import { clsx } from 'clsx';
 import { supabase } from '@/utils/supabase';
+import { Trash2, Edit2, Check, X, RefreshCcw } from 'lucide-react';
 
 interface Document {
     id: number;
@@ -20,6 +21,8 @@ interface Document {
 export default function DashboardTable() {
     const [documents, setDocuments] = useState<Document[]>([]);
     const [loading, setLoading] = useState(true);
+    const [editingId, setEditingId] = useState<number | null>(null);
+    const [editForm, setEditForm] = useState<Partial<Document>>({});
 
     const fetchDocuments = async () => {
         setLoading(true);
@@ -38,11 +41,38 @@ export default function DashboardTable() {
 
     useEffect(() => {
         fetchDocuments();
-
-        // Auto-refresh la fiecare 30 secunde
         const interval = setInterval(fetchDocuments, 30000);
         return () => clearInterval(interval);
     }, []);
+
+    const handleDelete = async (id: number) => {
+        if (!confirm('Sigur vrei să ștergi acest document?')) return;
+
+        const { error } = await supabase.from('documents').delete().eq('id', id);
+        if (error) alert('Eroare la ștergere: ' + error.message);
+        else fetchDocuments();
+    };
+
+    const startEdit = (doc: Document) => {
+        setEditingId(doc.id);
+        setEditForm(doc);
+    };
+
+    const saveEdit = async () => {
+        if (!editingId) return;
+
+        const { error } = await supabase
+            .from('documents')
+            .update(editForm)
+            .eq('id', editingId);
+
+        if (error) {
+            alert('Eroare la actualizare: ' + error.message);
+        } else {
+            setEditingId(null);
+            fetchDocuments();
+        }
+    };
 
     const getStatusColor = (expiryDate: string) => {
         const today = new Date();
@@ -66,36 +96,69 @@ export default function DashboardTable() {
 
     return (
         <div className="bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden">
+            <div className="p-4 bg-gray-50 border-b border-gray-200 flex justify-between items-center">
+                <h3 className="font-bold text-gray-700">Flotă Monitorizată</h3>
+                <button
+                    onClick={fetchDocuments}
+                    className="flex items-center gap-2 text-sm text-blue-600 hover:text-blue-800 font-medium transition-colors"
+                    disabled={loading}
+                >
+                    <RefreshCcw className={clsx("w-4 h-4", loading && "animate-spin")} />
+                    Reîmprospătează
+                </button>
+            </div>
             <div className="overflow-x-auto">
                 <table className="w-full text-left text-sm text-gray-600">
-                    <thead className="bg-gray-50 text-gray-700 uppercase font-semibold border-b border-gray-200">
+                    <thead className="bg-gray-100 text-gray-700 uppercase font-semibold border-b border-gray-200">
                         <tr>
                             <th className="px-6 py-3">Auto / Șofer</th>
-                            <th className="px-6 py-3">Tip Document</th>
-                            <th className="px-6 py-3">Data Expirării</th>
+                            <th className="px-6 py-3">Tip</th>
+                            <th className="px-6 py-3">Expirare</th>
                             <th className="px-6 py-3">Status</th>
-                            <th className="px-6 py-3">Email Alertă</th>
+                            <th className="px-6 py-3">Acțiuni</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100">
-                        {loading ? (
-                            <tr>
-                                <td colSpan={5} className="px-6 py-8 text-center text-gray-400">
-                                    Se încarcă documentele...
-                                </td>
-                            </tr>
+                        {loading && documents.length === 0 ? (
+                            <tr><td colSpan={5} className="px-6 py-8 text-center text-gray-400">Se încarcă...</td></tr>
                         ) : documents.length === 0 ? (
-                            <tr>
-                                <td colSpan={5} className="px-6 py-8 text-center text-gray-400">
-                                    Nu există documente. Adaugă primul document din formularul din stânga.
-                                </td>
-                            </tr>
+                            <tr><td colSpan={5} className="px-6 py-8 text-center text-gray-400">Niciun document găsit. Adaugă unul!</td></tr>
                         ) : (
                             documents.map((item) => (
                                 <tr key={item.id} className="hover:bg-gray-50 transition-colors">
-                                    <td className="px-6 py-4 font-medium text-gray-900">{item.car_info}</td>
-                                    <td className="px-6 py-4">{item.doc_type}</td>
-                                    <td className="px-6 py-4">{format(parseISO(item.expiry_date), 'dd.MM.yyyy')}</td>
+                                    <td className="px-6 py-4">
+                                        {editingId === item.id ? (
+                                            <input
+                                                value={editForm.car_info}
+                                                onChange={e => setEditForm({ ...editForm, car_info: e.target.value })}
+                                                className="border rounded px-2 py-1 w-full"
+                                            />
+                                        ) : item.car_info}
+                                    </td>
+                                    <td className="px-6 py-4">
+                                        {editingId === item.id ? (
+                                            <select
+                                                value={editForm.doc_type}
+                                                onChange={e => setEditForm({ ...editForm, doc_type: e.target.value })}
+                                                className="border rounded px-2 py-1"
+                                            >
+                                                <option value="ITP">ITP</option>
+                                                <option value="RCA">RCA</option>
+                                                <option value="Rovinieta">Rovinietă</option>
+                                                <option value="Casco">Casco</option>
+                                            </select>
+                                        ) : item.doc_type}
+                                    </td>
+                                    <td className="px-6 py-4">
+                                        {editingId === item.id ? (
+                                            <input
+                                                type="date"
+                                                value={editForm.expiry_date}
+                                                onChange={e => setEditForm({ ...editForm, expiry_date: e.target.value })}
+                                                className="border rounded px-2 py-1"
+                                            />
+                                        ) : format(parseISO(item.expiry_date), 'dd.MM.yyyy')}
+                                    </td>
                                     <td className="px-6 py-4">
                                         <span className={clsx(
                                             'px-2.5 py-0.5 rounded-full text-xs font-semibold border',
@@ -104,21 +167,26 @@ export default function DashboardTable() {
                                             {getStatusText(item.expiry_date)}
                                         </span>
                                     </td>
-                                    <td className="px-6 py-4">{item.alert_email}</td>
+                                    <td className="px-6 py-4">
+                                        <div className="flex items-center gap-2">
+                                            {editingId === item.id ? (
+                                                <>
+                                                    <button onClick={saveEdit} className="p-1 text-green-600 hover:bg-green-50 rounded"><Check className="w-4 h-4" /></button>
+                                                    <button onClick={() => setEditingId(null)} className="p-1 text-gray-600 hover:bg-gray-50 rounded"><X className="w-4 h-4" /></button>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <button onClick={() => startEdit(item)} className="p-1 text-blue-600 hover:bg-blue-50 rounded"><Edit2 className="w-4 h-4" /></button>
+                                                    <button onClick={() => handleDelete(item.id)} className="p-1 text-red-600 hover:bg-red-50 rounded"><Trash2 className="w-4 h-4" /></button>
+                                                </>
+                                            )}
+                                        </div>
+                                    </td>
                                 </tr>
                             ))
                         )}
                     </tbody>
                 </table>
-            </div>
-            {/* Buton Refresh manual */}
-            <div className="p-3 bg-gray-50 border-t border-gray-200 flex justify-end">
-                <button
-                    onClick={fetchDocuments}
-                    className="text-sm text-blue-600 hover:text-blue-800 font-medium transition-colors"
-                >
-                    🔄 Reîncarcă datele
-                </button>
             </div>
         </div>
     );
