@@ -29,21 +29,15 @@ export default function DashboardTable() {
         setLoading(true);
         setErrorMsg(null);
         try {
-            const { data, error } = await supabase
-                .from('documents')
-                .select('*')
-                .order('expiry_date', { ascending: true });
-
-            if (error) {
-                console.error('Eroare la încărcarea documentelor:', error);
-                const url = process.env.NEXT_PUBLIC_SUPABASE_URL || 'MISSING';
-                setErrorMsg(`Eroare Supabase: ${error.message} (Cod: ${error.code}). URL Check: ${url.substring(0, 15)}...`);
-            } else {
-                setDocuments(data || []);
+            const res = await fetch('/api/documents');
+            if (!res.ok) {
+                const errorData = await res.json();
+                throw new Error(errorData.error || `HTTP error! status: ${res.status}`);
             }
+            const data = await res.json();
+            setDocuments(data || []);
         } catch (err: any) {
-            const url = process.env.NEXT_PUBLIC_SUPABASE_URL || 'MISSING';
-            setErrorMsg(`Eroare de conexiune: ${err.message || 'Necunoscută'}. URL Check: ${url.substring(0, 15)}...`);
+            setErrorMsg(`Eroare de conexiune (API): ${err.message || 'Necunoscută'}`);
         }
         setLoading(false);
     };
@@ -57,9 +51,13 @@ export default function DashboardTable() {
     const handleDelete = async (id: number) => {
         if (!confirm('Sigur vrei să ștergi acest document?')) return;
 
-        const { error } = await supabase.from('documents').delete().eq('id', id);
-        if (error) alert('Eroare la ștergere: ' + error.message);
-        else fetchDocuments();
+        try {
+            const res = await fetch(`/api/documents?id=${id}`, { method: 'DELETE' });
+            if (!res.ok) throw new Error((await res.json()).error);
+            fetchDocuments();
+        } catch (err: any) {
+            alert('Eroare la ștergere: ' + err.message);
+        }
     };
 
     const startEdit = (doc: Document) => {
@@ -70,16 +68,17 @@ export default function DashboardTable() {
     const saveEdit = async () => {
         if (!editingId) return;
 
-        const { error } = await supabase
-            .from('documents')
-            .update(editForm)
-            .eq('id', editingId);
-
-        if (error) {
-            alert('Eroare la actualizare: ' + error.message);
-        } else {
+        try {
+            const res = await fetch('/api/documents', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(editForm)
+            });
+            if (!res.ok) throw new Error((await res.json()).error);
             setEditingId(null);
             fetchDocuments();
+        } catch (err: any) {
+            alert('Eroare la actualizare: ' + err.message);
         }
     };
 
